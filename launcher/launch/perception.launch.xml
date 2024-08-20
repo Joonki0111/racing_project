@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="launch_valid_path_checker" default="true" description="launch valid_path_checker"/>
+
+  <node_container pkg="rclcpp_components" exec="component_container" name="perception_container" namespace="" args="test_args">
+  </node_container>
+
+  <group if="$(var launch_valid_path_checker)">
+    <load_composable_node target="perception_container">
+      <composable_node pkg="valid_path_checker" plugin="perception_component::ValidPathChecker" name="valid_path_checker_node" namespace="">
+        <extra_arg name="use_intra_process_comms" value="true"/>
+      </composable_node>
+    </load_composable_node>
+  </group>
+
+</launch>

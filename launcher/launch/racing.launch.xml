@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="launch_perception" default="true" description="launch perception"/>
+  <arg name="launch_planning" default="true" description="launch planning"/>
+
+  <group if="$(var launch_perception)">
+    <include file="$(find-pkg-share launcher)/launch/perception.launch.xml">
+    </include>
+  </group>
+
+  <group if="$(var launch_planning)">
+    <include file="$(find-pkg-share launcher)/launch/planning.launch.xml">
+    </include>
+  </group>
+</launch>

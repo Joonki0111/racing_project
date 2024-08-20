@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="launch_route_generator" default="true" description="launch route_generator"/>
+  <arg name="launch_lanechange_trigger_node" default="true" description="launch lanechange_trigger_node"/>
+
+  <node_container pkg="rclcpp_components" exec="component_container" name="planning_container" namespace="" args="test_args">
+  </node_container>
+
+  <group if="$(var launch_route_generator)">
+    <load_composable_node target="planning_container">
+      <composable_node pkg="route_generator" plugin="planning_component::RouteGenerator" name="route_generator" namespace="">
+        <extra_arg name="use_intra_process_comms" value="false"/>
+      </composable_node>
+    </load_composable_node>
+  </group>
+
+  <group if="$(var launch_lanechange_trigger_node)">
+    <load_composable_node target="planning_container">
+      <composable_node pkg="lanechange_trigger" plugin="planning_component::LanechangeTrigger" name="lanechange_trigger_node" namespace="">
+        <extra_arg name="use_intra_process_comms" value="true"/>
+      </composable_node>
+    </load_composable_node>
+  </group>
+</launch>

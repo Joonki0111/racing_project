@@ -1,0 +1,8 @@
+<launch>
+  <node_container pkg="rclcpp_components" exec="component_container" name="my_container" namespace="" args="test_args">
+    <composable_node pkg="route_generator" plugin="planning_component::RouteGenerator" name="route_publisher" namespace="">
+      <extra_arg name="use_intra_process_comms" value="false"/>
+      <param from="$(find-pkg-share route_generator)/config/route_generator.param.yaml"/>
+    </composable_node>
+  </node_container>
+</launch>
