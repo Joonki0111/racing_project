@@ -13,6 +13,7 @@ find_package(autoware_planning_msgs REQUIRED)
 find_package(autoware_adapi_v1_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(planning_msgs REQUIRED)
 
 include_directories(include)
 
@@ -30,6 +31,7 @@ ament_target_dependencies(
   autoware_adapi_v1_msgs
   nav_msgs
   geometry_msgs
+  planning_msgs
 )
 
 rclcpp_components_register_nodes(

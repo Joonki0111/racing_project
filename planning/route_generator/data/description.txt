@@ -1,0 +1,4 @@
+goalpose.csv
+1~5: center lane
+6~10: left lane
+11~15: right lane
