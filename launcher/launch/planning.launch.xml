@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
   <arg name="launch_route_generator" default="true" description="launch route_generator"/>
-  <arg name="launch_lanechange_trigger_node" default="false" description="launch lanechange_trigger_node"/>
+  <arg name="launch_lanechange_trigger_node" default="true" description="launch lanechange_trigger_node"/>
 
   <node_container pkg="rclcpp_components" exec="component_container" name="planning_container" namespace="" args="test_args">
   </node_container>

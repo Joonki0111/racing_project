@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <arg name="launch_valid_path_checker" default="false" description="launch valid_path_checker"/>
+  <arg name="launch_valid_path_checker" default="true" description="launch valid_path_checker"/>
 
   <node_container pkg="rclcpp_components" exec="component_container" name="perception_container" namespace="" args="test_args">
   </node_container>

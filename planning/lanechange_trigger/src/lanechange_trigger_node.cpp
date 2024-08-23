@@ -13,6 +13,7 @@ LanechangeTrigger::LanechangeTrigger(const rclcpp::NodeOptions & node_options)
 
     pub_rtc_status_ = this->create_publisher<CooperateStatusArray>("/api/external/get/rtc_status", rclcpp::QoS(1));
 
+    cli_trigger_ = this->create_client<example_interfaces::srv::Trigger>("/racing/lc_trigger");
     timer_ = this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&LanechangeTrigger::run, this));
 
     valid_path_msg_ptr_ = nullptr;
@@ -37,6 +38,12 @@ void LanechangeTrigger::run()
     }
     CooperateStatusArray statuses_msg = triggerWithDirection(*rtc_status_msg_ptr_, *valid_path_msg_ptr_);
     pub_rtc_status_->publish(statuses_msg);
+
+    example_interfaces::srv::Trigger::Request::SharedPtr request = std::make_shared<example_interfaces::srv::Trigger::Request>();
+    if(!statuses_msg.statuses.empty())
+    {
+        cli_trigger_->async_send_request(request);
+    }
 }
 
 bool LanechangeTrigger::checkSubscription()
@@ -62,6 +69,7 @@ CooperateStatusArray LanechangeTrigger::triggerWithDirection(CooperateStatusArra
         {
             if(statuses_vec.statuses[i].module.type == Module::EXT_REQUEST_LANE_CHANGE_LEFT)
             {
+                statuses_vec.statuses[i].safe = true;
                 filtered_statuses_vec.statuses.push_back(statuses_vec.statuses[i]);
                 return filtered_statuses_vec;
             }
@@ -70,6 +78,7 @@ CooperateStatusArray LanechangeTrigger::triggerWithDirection(CooperateStatusArra
         {
             if(statuses_vec.statuses[i].module.type == Module::EXT_REQUEST_LANE_CHANGE_RIGHT)
             {
+                statuses_vec.statuses[i].safe = true;
                 filtered_statuses_vec.statuses.push_back(statuses_vec.statuses[i]);
                 return filtered_statuses_vec;
             }      
@@ -78,6 +87,7 @@ CooperateStatusArray LanechangeTrigger::triggerWithDirection(CooperateStatusArra
         {
             if(statuses_vec.statuses[i].module.type == Module::EXT_REQUEST_LANE_CHANGE_LEFT)
             {
+                statuses_vec.statuses[i].safe = true;
                 filtered_statuses_vec.statuses.push_back(statuses_vec.statuses[i]);
                 return filtered_statuses_vec;
             }
