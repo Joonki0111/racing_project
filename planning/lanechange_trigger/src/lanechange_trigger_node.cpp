@@ -5,11 +5,14 @@ namespace planning_component
 
 LanechangeTrigger::LanechangeTrigger(const rclcpp::NodeOptions & node_options) 
   : Node("lanechange_trigger_node", node_options)
-  {
+{
     sub_valid_path_ = this->create_subscription<ValidPath>("/racing/valid_path",
         rclcpp::QoS(1), std::bind(&LanechangeTrigger::validpathCallback, this, std::placeholders::_1));
     sub_rtc_status_ = this->create_subscription<CooperateStatusArray>("/api/external/get/rtc_status_",
         rclcpp::QoS(1), std::bind(&LanechangeTrigger::rtcStatusCallback, this, std::placeholders::_1));
+    sub_lanechange_status_ = this->create_subscription<LanechangeStatus>(
+        "/racing/lanechange_status", rclcpp::QoS(1),
+            std::bind(&LanechangeTrigger::lanechangestatusCallback, this, std::placeholders::_1));
 
     pub_rtc_status_ = this->create_publisher<CooperateStatusArray>("/api/external/get/rtc_status", rclcpp::QoS(1));
 
@@ -18,6 +21,7 @@ LanechangeTrigger::LanechangeTrigger(const rclcpp::NodeOptions & node_options)
 
     valid_path_msg_ptr_ = nullptr;
     rtc_status_msg_ptr_ = nullptr;
+    lanechange_status_msg_ptr_ = nullptr;
 }
 
 void LanechangeTrigger::validpathCallback(const ValidPath::SharedPtr valid_path_msg)
@@ -30,20 +34,9 @@ void LanechangeTrigger::rtcStatusCallback(const CooperateStatusArray::SharedPtr 
     rtc_status_msg_ptr_ = rtc_status_msg;
 }
 
-void LanechangeTrigger::run()
+void LanechangeTrigger::lanechangestatusCallback(const LanechangeStatus::SharedPtr lanechange_status_msg)
 {
-    if(!checkSubscription())
-    {
-        return;
-    }
-    CooperateStatusArray statuses_msg = triggerWithDirection(*rtc_status_msg_ptr_, *valid_path_msg_ptr_);
-    pub_rtc_status_->publish(statuses_msg);
-
-    example_interfaces::srv::Trigger::Request::SharedPtr request = std::make_shared<example_interfaces::srv::Trigger::Request>();
-    if(!statuses_msg.statuses.empty())
-    {
-        cli_trigger_->async_send_request(request);
-    }
+    lanechange_status_msg_ptr_ = lanechange_status_msg;
 }
 
 bool LanechangeTrigger::checkSubscription()
@@ -57,6 +50,35 @@ bool LanechangeTrigger::checkSubscription()
         return false;
     }
     return true;
+}
+
+void LanechangeTrigger::run()
+{
+    if(!checkSubscription())
+    {
+        return;
+    }
+    CooperateStatusArray statuses_msg = triggerWithDirection(*rtc_status_msg_ptr_, *valid_path_msg_ptr_);
+    pub_rtc_status_->publish(statuses_msg);
+
+    example_interfaces::srv::Trigger::Request::SharedPtr request = std::make_shared<example_interfaces::srv::Trigger::Request>();
+
+    /*
+        [Request Lanechange]
+        Request lanechange while not lane changing.
+    */
+    if(!statuses_msg.statuses.empty())
+    {
+        if(lanechange_status_msg_ptr_->type == LanechangeStatus::CHANGINGLEFT || 
+            lanechange_status_msg_ptr_->type == LanechangeStatus::CHANGINGRIGHT)
+        {
+            return;
+        }
+        else
+        {
+            cli_trigger_->async_send_request(request);
+        }
+    }
 }
 
 CooperateStatusArray LanechangeTrigger::triggerWithDirection(CooperateStatusArray & statuses_vec, const ValidPath & valid_path)

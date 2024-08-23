@@ -12,6 +12,7 @@ find_package(std_msgs REQUIRED)
 find_package(tier4_rtc_msgs REQUIRED)
 find_package(example_interfaces REQUIRED)
 find_package(perception_msgs REQUIRED)
+find_package(planning_msgs REQUIRED)
 
 include_directories(include)
 
@@ -28,6 +29,7 @@ ament_target_dependencies(
   tier4_rtc_msgs
   example_interfaces
   perception_msgs
+  planning_msgs
 )
 
 rclcpp_components_register_nodes(
