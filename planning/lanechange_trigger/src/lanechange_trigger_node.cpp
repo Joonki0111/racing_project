@@ -126,6 +126,10 @@ CooperateStatusArray LanechangeTrigger::triggerWithDirection(CooperateStatusArra
                 return filtered_statuses_vec;
             }
         }
+        else
+        {
+            return filtered_statuses_vec;
+        }
     }
     return filtered_statuses_vec;
 }

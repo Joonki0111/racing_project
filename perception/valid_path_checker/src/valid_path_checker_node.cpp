@@ -133,33 +133,39 @@ bool ValidPathChecker::isObjectOnLaneChangingPath(const Path & path_msg, const P
             const float pathpoint_diff = std::sqrt(std::pow((path_point_x_1 - path_point_x_2), 2) + 
                 std::pow((path_point_y_1 - path_point_y_2), 2));
 
-            if(pathpoint_diff > 10.f || pathpoint_diff < 3.5f)
+            if(pathpoint_diff >= 3.0f && pathpoint_diff < 5.0f)
             {
-                continue;
+                const float dx = (path_point_x_2 - path_point_x_1) / pathpoint_diff;
+                const float dy = (path_point_y_2 - path_point_y_1) / pathpoint_diff;
+
+                std::vector<Point> points_within_path_points;
+
+                for (int j = 0; j < 7; j++) 
+                {
+                    Point p;
+                    p.x = path_point_x_1 + j * 0.8f * dx;
+                    p.y = path_point_y_1 + j * 0.8f * dy;
+                    points_within_path_points.push_back(p);
+                }
+
+                for(Point p : points_within_path_points)
+                {
+                    const float pathpoint_object_diff = std::sqrt(std::pow((p.x - object_x), 2) + 
+                        std::pow((p.y - object_y), 2)); 
+                    if(pathpoint_object_diff < 1.5f)
+                    {
+                        return true;
+                    }
+                }
             }
-
-            const float dx = (path_point_x_2 - path_point_x_1) / pathpoint_diff;
-            const float dy = (path_point_y_2 - path_point_y_1) / pathpoint_diff;
-
-            std::vector<Point> points_within_path_points;
-
-            for (int j = 0; j < 7; j++) 
+            else if(pathpoint_diff < 3.0f)
             {
-              Point p;
-              p.x = path_point_x_1 + j * 0.8f * dx;
-              p.y = path_point_y_1 + j * 0.8f * dy;
-              points_within_path_points.push_back(p);
-            }
-
-            for(Point p : points_within_path_points)
-            {
-                const float pathpoint_object_diff = std::sqrt(std::pow((p.x - object_x), 2) + 
-                    std::pow((p.y - object_y), 2)); 
-
-              if(pathpoint_object_diff < 1.f)
-              {
-                return true;
-              }
+                const float pathpoint_object_diff = std::sqrt(std::pow((path_point_x_1 - object_x), 2) + 
+                    std::pow((path_point_y_1 - object_y), 2));
+                if(pathpoint_object_diff < 1.5f)
+                {
+                    return true;
+                }
             }
         }
     }
@@ -194,8 +200,8 @@ ValidPath ValidPathChecker::getLeftRightPathExistence(
         valid_path.type = ValidPath::NONE;
         return valid_path;
     }
-    valid_path.type = ValidPath::NONE;
 
+    valid_path.type = ValidPath::NONE;
     return valid_path;
 }
 
@@ -248,9 +254,18 @@ ValidPath ValidPathChecker::filterPathWithObject(
                 return valid_path;
             }
         }
-        default:
+        case ValidPath::NONE:
+        {
+            valid_path.type = ValidPath::NONE;
             return valid_path;
+        }
+        default:
+        {
+            valid_path.type = ValidPath::NONE;
+            return valid_path;
+        }
     }
+    valid_path.type = ValidPath::NONE;
     return valid_path;
 }
 } //namespace perception_component
