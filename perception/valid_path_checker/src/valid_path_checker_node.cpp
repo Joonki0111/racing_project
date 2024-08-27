@@ -95,22 +95,22 @@ bool ValidPathChecker::isObjectOnMainPath(const Path & main_path_msg, const Pred
 {
     for(PredictedObject object : objects_msg.objects)
     {
-        float object_x = object.kinematics.initial_pose_with_covariance.pose.position.x;
-        float object_y = object.kinematics.initial_pose_with_covariance.pose.position.y;
+        const float object_x = object.kinematics.initial_pose_with_covariance.pose.position.x;
+        const float object_y = object.kinematics.initial_pose_with_covariance.pose.position.y;
 
-      for(PathPoint point : main_path_msg.points)
-      {
-          float path_point_x = point.pose.position.x;
-          float path_point_y = point.pose.position.y;
-
-          float point_diff = std::sqrt(std::pow((path_point_x - object_x), 2) + 
-              std::pow((path_point_y - object_y), 2));
-
-        if(point_diff < 1.f) //[PARAM] object_on_path_threshhold
+        for(PathPoint point : main_path_msg.points)
         {
-            return true;
+            const float path_point_x = point.pose.position.x;
+            const float path_point_y = point.pose.position.y;
+
+            const float point_diff = std::sqrt(std::pow((path_point_x - object_x), 2) + 
+                std::pow((path_point_y - object_y), 2));
+
+            if(point_diff < 1.f) //[PARAM] object_on_path_threshhold
+            {
+                return true;
+            }
         }
-      }
     }
     return false;
 }
@@ -119,18 +119,18 @@ bool ValidPathChecker::isObjectOnLaneChangingPath(const Path & path_msg, const P
 {
     for(PredictedObject object : objects_msg.objects)
     {
-        float object_x = object.kinematics.initial_pose_with_covariance.pose.position.x;
-        float object_y = object.kinematics.initial_pose_with_covariance.pose.position.y;
+        const float object_x = object.kinematics.initial_pose_with_covariance.pose.position.x;
+        const float object_y = object.kinematics.initial_pose_with_covariance.pose.position.y;
 
         for(int i = 0; i < path_msg.points.size(); i++)
         {
-            float path_point_x_1 = path_msg.points[i].pose.position.x;
-            float path_point_y_1 = path_msg.points[i].pose.position.y;
+            const float path_point_x_1 = path_msg.points[i].pose.position.x;
+            const float path_point_y_1 = path_msg.points[i].pose.position.y;
 
-            float path_point_x_2 = path_msg.points[i+1].pose.position.x;
-            float path_point_y_2 = path_msg.points[i+1].pose.position.y;
+            const float path_point_x_2 = path_msg.points[i+1].pose.position.x;
+            const float path_point_y_2 = path_msg.points[i+1].pose.position.y;
 
-            float pathpoint_diff = std::sqrt(std::pow((path_point_x_1 - path_point_x_2), 2) + 
+            const float pathpoint_diff = std::sqrt(std::pow((path_point_x_1 - path_point_x_2), 2) + 
                 std::pow((path_point_y_1 - path_point_y_2), 2));
 
             if(pathpoint_diff > 10.f || pathpoint_diff < 3.5f)
@@ -138,8 +138,8 @@ bool ValidPathChecker::isObjectOnLaneChangingPath(const Path & path_msg, const P
                 continue;
             }
 
-            float dx = (path_point_x_2 - path_point_x_1) / pathpoint_diff;
-            float dy = (path_point_y_2 - path_point_y_1) / pathpoint_diff;
+            const float dx = (path_point_x_2 - path_point_x_1) / pathpoint_diff;
+            const float dy = (path_point_y_2 - path_point_y_1) / pathpoint_diff;
 
             std::vector<Point> points_within_path_points;
 
@@ -153,7 +153,7 @@ bool ValidPathChecker::isObjectOnLaneChangingPath(const Path & path_msg, const P
 
             for(Point p : points_within_path_points)
             {
-                float pathpoint_object_diff = std::sqrt(std::pow((p.x - object_x), 2) + 
+                const float pathpoint_object_diff = std::sqrt(std::pow((p.x - object_x), 2) + 
                     std::pow((p.y - object_y), 2)); 
 
               if(pathpoint_object_diff < 1.f)
@@ -226,8 +226,8 @@ ValidPath ValidPathChecker::filterPathWithObject(
             }
         case ValidPath::LEFTANDRIGHT:
         {
-            bool is_left_valid = isObjectOnLaneChangingPath(left_path, *objects_msg_ptr_);
-            bool is_right_valid = isObjectOnLaneChangingPath(right_path, *objects_msg_ptr_);
+            const bool is_left_valid = isObjectOnLaneChangingPath(left_path, *objects_msg_ptr_);
+            const bool is_right_valid = isObjectOnLaneChangingPath(right_path, *objects_msg_ptr_);
             if(is_left_valid && is_right_valid)
             {
                 valid_path.type = ValidPath::NONE;
