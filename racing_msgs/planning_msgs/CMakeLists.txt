@@ -7,11 +7,13 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LanechangeStatus.msg"
 
   DEPENDENCIES
+  builtin_interfaces
 )
 
 if(BUILD_TESTING)

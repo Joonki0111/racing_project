@@ -6,6 +6,10 @@ namespace planning_component
 LanechangeTrigger::LanechangeTrigger(const rclcpp::NodeOptions & node_options) 
   : Node("lanechange_trigger_node", node_options)
 {
+    lanechanged_ = false;
+    is_lanechange_available_ = true;
+    lanechange_finished_time_ = 0;
+
     sub_valid_path_ = this->create_subscription<ValidPath>("/racing/valid_path",
         rclcpp::QoS(1), std::bind(&LanechangeTrigger::validpathCallback, this, std::placeholders::_1));
     sub_rtc_status_ = this->create_subscription<CooperateStatusArray>("/api/external/get/rtc_status_",
@@ -49,6 +53,10 @@ bool LanechangeTrigger::checkSubscription()
     {
         return false;
     }
+    if(lanechange_status_msg_ptr_ == nullptr)
+    {
+        return false;
+    }
     return true;
 }
 
@@ -58,10 +66,13 @@ void LanechangeTrigger::run()
     {
         return;
     }
+
     CooperateStatusArray statuses_msg = triggerWithDirection(*rtc_status_msg_ptr_, *valid_path_msg_ptr_);
     pub_rtc_status_->publish(statuses_msg);
 
     example_interfaces::srv::Trigger::Request::SharedPtr request = std::make_shared<example_interfaces::srv::Trigger::Request>();
+
+    calcTimeElapsed(*lanechange_status_msg_ptr_);
 
     /*
         [Request Lanechange]
@@ -74,9 +85,10 @@ void LanechangeTrigger::run()
         {
             return;
         }
-        else
+        else if(lanechange_status_msg_ptr_->type == LanechangeStatus::NONE && is_lanechange_available_)
         {
             cli_trigger_->async_send_request(request);
+            is_lanechange_available_ = false;
         }
     }
 }
@@ -116,6 +128,29 @@ CooperateStatusArray LanechangeTrigger::triggerWithDirection(CooperateStatusArra
         }
     }
     return filtered_statuses_vec;
+}
+
+void LanechangeTrigger::calcTimeElapsed(const LanechangeStatus & lanechange_status_msg)
+{    
+    if(lanechange_status_msg.type == LanechangeStatus::CHANGEDLEFT || 
+        lanechange_status_msg.type == LanechangeStatus::CHANGEDRIGHT)
+    {
+        lanechanged_ = true;
+        lanechange_finished_time_ = lanechange_status_msg.stamp.sec;
+    }
+
+    if(lanechanged_)
+    {
+        const int current_time = this->get_clock()->now().seconds();
+        const int elapsed_time = current_time - lanechange_finished_time_;
+
+        if(elapsed_time > 1) //PARAM 
+        {
+            lanechanged_ = false;
+            is_lanechange_available_ = true;
+            lanechange_finished_time_ = 0;
+        }
+    }
 }
 } // namespace planning_component
 #include <rclcpp_components/register_node_macro.hpp>
