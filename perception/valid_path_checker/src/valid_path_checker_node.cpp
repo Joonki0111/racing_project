@@ -215,7 +215,7 @@ ValidPath ValidPathChecker::filterPathWithObject(
                 return valid_path;
             }
         case ValidPath::RIGHT:
-            if(!isObjectOnLaneChangingPath(left_path, *objects_msg_ptr_))
+            if(!isObjectOnLaneChangingPath(right_path, *objects_msg_ptr_))
             {
                 return valid_path;
             } 
