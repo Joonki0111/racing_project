@@ -28,10 +28,12 @@ using planning_msgs::msg::LanechangeStatus;
 
 class RouteGenerator : public rclcpp::Node
 {
+    public:
+        explicit RouteGenerator(const rclcpp::NodeOptions & node_options);
+        
     private:
         enum class CurrentLane : uint8_t 
         {
-            
             LEFT = 0,
             CENTER,
             RIGHT
@@ -67,10 +69,10 @@ class RouteGenerator : public rclcpp::Node
         float dist_threshold_;
 
         void sendRequest();
-        bool checkSubscription();
         void poseCallback(const nav_msgs::msg::Odometry::SharedPtr pose_msg);
         void lanechangestatusCallback(const LanechangeStatus::SharedPtr lanechange_status_msg);
         void run();
+        bool checkSubscription();
         void calcClosestCheckpoint(const geometry_msgs::msg::Point & pose);
         void updateCurrentLane(const LanechangeStatus & lanechange_status_msg);
         void createFirstRoute(const nav_msgs::msg::Odometry & ego_pose);
@@ -82,9 +84,6 @@ class RouteGenerator : public rclcpp::Node
         LaneletRoute createGoalpose(LaneletRoute & route_msg);
         std::vector<Pose> generateGoalpose();
         std::vector<Point> generateCheckpoint();
-
-    public:
-        explicit RouteGenerator(const rclcpp::NodeOptions & node_options);
 };
 }
 #endif //ROUTE_GENERATOR__ROUTE_NODE_HPP_

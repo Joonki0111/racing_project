@@ -11,13 +11,20 @@ find_package(rclcpp_components REQUIRED)
 find_package(autoware_auto_planning_msgs REQUIRED)
 find_package(autoware_auto_perception_msgs REQUIRED)
 find_package(perception_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 include_directories(include)
 
 add_library(
   valid_path_checker_node SHARED
   src/valid_path_checker_node.cpp
+)
+
+add_library(
+  obstacle_distance_filter_node SHARED
+  src/obstacle_distance_filter_node.cpp
 )
 
 ament_target_dependencies(
@@ -28,6 +35,14 @@ ament_target_dependencies(
   autoware_auto_perception_msgs
   perception_msgs
   geometry_msgs
+  visualization_msgs
+)
+
+ament_target_dependencies(
+  obstacle_distance_filter_node
+  rclcpp
+  rclcpp_components
+  perception_msgs
 )
 
 rclcpp_components_register_nodes(
@@ -35,8 +50,14 @@ rclcpp_components_register_nodes(
   "perception_component::ValidPathChecker"
 )
 
+rclcpp_components_register_nodes(
+  obstacle_distance_filter_node
+  "perception_component::ObstacleDistFilter"
+)
+
 install(TARGETS 
-valid_path_checker_node
+  valid_path_checker_node
+  obstacle_distance_filter_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

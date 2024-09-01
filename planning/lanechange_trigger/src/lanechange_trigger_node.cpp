@@ -6,10 +6,6 @@ namespace planning_component
 LanechangeTrigger::LanechangeTrigger(const rclcpp::NodeOptions & node_options) 
   : Node("lanechange_trigger_node", node_options)
 {
-    lanechanged_ = false;
-    is_lanechange_available_ = true;
-    lanechange_finished_time_ = 0;
-
     sub_valid_path_ = this->create_subscription<ValidPath>("/racing/valid_path",
         rclcpp::QoS(1), std::bind(&LanechangeTrigger::validpathCallback, this, std::placeholders::_1));
     sub_rtc_status_ = this->create_subscription<CooperateStatusArray>("/api/external/get/rtc_status_",
@@ -43,6 +39,19 @@ void LanechangeTrigger::lanechangestatusCallback(const LanechangeStatus::SharedP
     lanechange_status_msg_ptr_ = lanechange_status_msg;
 }
 
+void LanechangeTrigger::run()
+{
+    if(!checkSubscription())
+    {
+        return;
+    }
+
+    CooperateStatusArray statuses_msg = createStatusesWithDirection(*rtc_status_msg_ptr_, *valid_path_msg_ptr_);
+    pub_rtc_status_->publish(statuses_msg);
+
+    requestLanechange(*lanechange_status_msg_ptr_, statuses_msg);
+}
+
 bool LanechangeTrigger::checkSubscription()
 {
     if(valid_path_msg_ptr_ == nullptr)
@@ -60,40 +69,7 @@ bool LanechangeTrigger::checkSubscription()
     return true;
 }
 
-void LanechangeTrigger::run()
-{
-    if(!checkSubscription())
-    {
-        return;
-    }
-
-    CooperateStatusArray statuses_msg = triggerWithDirection(*rtc_status_msg_ptr_, *valid_path_msg_ptr_);
-    pub_rtc_status_->publish(statuses_msg);
-
-    example_interfaces::srv::Trigger::Request::SharedPtr request = std::make_shared<example_interfaces::srv::Trigger::Request>();
-
-    calcTimeElapsed(*lanechange_status_msg_ptr_);
-
-    /*
-        [Request Lanechange]
-        Request lanechange while not lane changing.
-    */
-    if(!statuses_msg.statuses.empty())
-    {
-        if(lanechange_status_msg_ptr_->type == LanechangeStatus::CHANGINGLEFT || 
-            lanechange_status_msg_ptr_->type == LanechangeStatus::CHANGINGRIGHT)
-        {
-            return;
-        }
-        else if(lanechange_status_msg_ptr_->type == LanechangeStatus::NONE && is_lanechange_available_)
-        {
-            cli_trigger_->async_send_request(request);
-            is_lanechange_available_ = false;
-        }
-    }
-}
-
-CooperateStatusArray LanechangeTrigger::triggerWithDirection(CooperateStatusArray & statuses_vec, const ValidPath & valid_path)
+CooperateStatusArray LanechangeTrigger::createStatusesWithDirection(CooperateStatusArray & statuses_vec, const ValidPath & valid_path)
 {
     CooperateStatusArray filtered_statuses_vec;
 
@@ -134,26 +110,23 @@ CooperateStatusArray LanechangeTrigger::triggerWithDirection(CooperateStatusArra
     return filtered_statuses_vec;
 }
 
-void LanechangeTrigger::calcTimeElapsed(const LanechangeStatus & lanechange_status_msg)
-{    
-    if(lanechange_status_msg.type == LanechangeStatus::CHANGEDLEFT || 
-        lanechange_status_msg.type == LanechangeStatus::CHANGEDRIGHT)
+void LanechangeTrigger::requestLanechange(const LanechangeStatus & lanechange_status_msg, const CooperateStatusArray & statuses_msg)
+{
+    example_interfaces::srv::Trigger::Request::SharedPtr request = std::make_shared<example_interfaces::srv::Trigger::Request>();
+
+    if(statuses_msg.statuses.empty())
     {
-        lanechanged_ = true;
-        lanechange_finished_time_ = lanechange_status_msg.stamp.sec;
+        return;
+    }
+    else if(lanechange_status_msg.type == LanechangeStatus::CHANGINGLEFT || 
+        lanechange_status_msg.type == LanechangeStatus::CHANGINGRIGHT)
+    {
+        return;
     }
 
-    if(lanechanged_)
+    if(lanechange_status_msg.type == LanechangeStatus::NONE)
     {
-        const int current_time = this->get_clock()->now().seconds();
-        const int elapsed_time = current_time - lanechange_finished_time_;
-
-        if(elapsed_time > 1) //PARAM 
-        {
-            lanechanged_ = false;
-            is_lanechange_available_ = true;
-            lanechange_finished_time_ = 0;
-        }
+        cli_trigger_->async_send_request(request);
     }
 }
 } // namespace planning_component

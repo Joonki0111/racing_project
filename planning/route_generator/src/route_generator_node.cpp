@@ -62,20 +62,6 @@ void RouteGenerator::sendRequest()
     client_->async_send_request(request);
 }
 
-bool RouteGenerator::checkSubscription()
-{
-    if(pose_msg_ptr_ == nullptr)
-    {
-        return false;
-    }
-    else if(lanechange_status_msg_ptr_ == nullptr)
-    {
-        createFirstRoute(*pose_msg_ptr_);
-        return false;
-    }
-    return true;
-}
-
 void RouteGenerator::poseCallback(const nav_msgs::msg::Odometry::SharedPtr pose_msg)
 {
     pose_msg_ptr_ = pose_msg;
@@ -96,6 +82,20 @@ void RouteGenerator::run()
     updateCurrentLane(*lanechange_status_msg_ptr_);
     calcClosestCheckpoint(pose_msg_ptr_->pose.pose.position);
     createRoute(*pose_msg_ptr_);
+}
+
+bool RouteGenerator::checkSubscription()
+{
+    if(pose_msg_ptr_ == nullptr)
+    {
+        return false;
+    }
+    else if(lanechange_status_msg_ptr_ == nullptr)
+    {
+        createFirstRoute(*pose_msg_ptr_);
+        return false;
+    }
+    return true;
 }
 
 void RouteGenerator::calcClosestCheckpoint(const geometry_msgs::msg::Point & position)

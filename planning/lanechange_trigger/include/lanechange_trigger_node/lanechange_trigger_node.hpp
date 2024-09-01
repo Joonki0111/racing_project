@@ -39,17 +39,13 @@ class LanechangeTrigger : public rclcpp::Node{
         CooperateStatusArray::SharedPtr rtc_status_msg_ptr_;
         LanechangeStatus::SharedPtr lanechange_status_msg_ptr_;
 
-        bool lanechanged_;
-        bool is_lanechange_available_;
-        int lanechange_finished_time_;
-
         void validpathCallback(const ValidPath::SharedPtr valid_path_msg);
         void rtcStatusCallback(const CooperateStatusArray::SharedPtr rtc_status_msg);
         void lanechangestatusCallback(const LanechangeStatus::SharedPtr lanechange_status_msg);
-        bool checkSubscription();
         void run();
-        CooperateStatusArray triggerWithDirection(CooperateStatusArray & statuses_vec, const ValidPath & valid_path);
-        void calcTimeElapsed(const LanechangeStatus & lanechange_status_msg);
+        bool checkSubscription();
+        CooperateStatusArray createStatusesWithDirection(CooperateStatusArray & statuses_vec, const ValidPath & valid_path);
+        void requestLanechange(const LanechangeStatus & lanechange_status_msg, const CooperateStatusArray & statuses_msg);
 };
 }
 #endif  //LANECHANGE_TRIGGER_NODE__LANECHANGE_TRIGGER_NODE_HPP_

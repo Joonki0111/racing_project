@@ -13,4 +13,12 @@
     </load_composable_node>
   </group>
 
+  <group if="$(var launch_valid_path_checker)">
+    <load_composable_node target="perception_container">
+      <composable_node pkg="valid_path_checker" plugin="perception_component::ObstacleDistFilter" name="obstacle_distance_filter_node" namespace="">
+        <extra_arg name="use_intra_process_comms" value="true"/>
+      </composable_node>
+    </load_composable_node>
+  </group>
+
 </launch>
