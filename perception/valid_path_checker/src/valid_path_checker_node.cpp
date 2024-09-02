@@ -7,6 +7,9 @@ ValidPathChecker::ValidPathChecker(const rclcpp::NodeOptions & node_options)
   : Node("path_object_checker_node", node_options)
 {
     ego_status_.is_ego_cruising = false;
+    lane_status_.left_occupied = false;
+    lane_status_.right_occupied = false;
+    lane_status_.furthest_lane.type = ValidPath::NONE;
 
     sub_main_path_ = this->create_subscription<Path>("/planning/scenario_planning/lane_driving/behavior_planning/path", 
         rclcpp::QoS(1), std::bind(&ValidPathChecker::mainpathCallback, this, std::placeholders::_1));
@@ -77,7 +80,7 @@ void ValidPathChecker::run()
     
     ego_status_.is_ego_cruising = checkEgoCruiseState(*obstacle_dist_msg_ptr_);
     getLeftRightPathExistence(valid_path, *right_path_msg_ptr_, *left_path_msg_ptr_);
-    filterPathWithBlindspot(valid_path, *pose_msg_ptr_, *objects_msg_ptr_);
+    filterPathWithBlindspot(valid_path, *objects_msg_ptr_);
     pub_valid_path_->publish(valid_path);
 }
 
@@ -120,9 +123,10 @@ bool ValidPathChecker::checkEgoCruiseState(const DistToObject & dist_to_object_m
     return false;
 }
 
-std::pair<bool, bool> ValidPathChecker::checkBlindSpot(const Odometry & pose_msg, const DetectedObjects & objects_msg)
+void ValidPathChecker::checkBlindSpot(const DetectedObjects & objects_msg)
 {    
-    std::pair<bool, bool> current_side_object(false, false);
+    lane_status_.left_occupied = false;
+    lane_status_.right_occupied = false;
 
     for(DetectedObject object : objects_msg.objects)
     {
@@ -131,21 +135,19 @@ std::pair<bool, bool> ValidPathChecker::checkBlindSpot(const Odometry & pose_msg
 
         const float object_diff = std::sqrt(std::pow(object_x, 2) + std::pow(object_y, 2));
     
-        if(object_diff < 30.0f)
+        if(object_diff < 20.0f)
         {
-
             if(object_y > 1.5f && object_y < 4.5f) //PARAM
             {
-                current_side_object.first = true; //object is on left
+                lane_status_.left_occupied = true;
+                
             }
             else if(object_y < -1.5f && object_y > -4.5f)
             {
-                current_side_object.second = true; //object is on right
+                lane_status_.right_occupied = true;
             }
         }
     }
-
-    return current_side_object;
 }
 
 ValidPath ValidPathChecker::getLeftRightPathExistence(
@@ -181,17 +183,18 @@ ValidPath ValidPathChecker::getLeftRightPathExistence(
     return valid_path;
 }
 
-ValidPath ValidPathChecker::filterPathWithBlindspot(ValidPath & valid_path, const Odometry & pose_msg, const DetectedObjects & objects_msg)
+ValidPath ValidPathChecker::filterPathWithBlindspot(ValidPath & valid_path, const DetectedObjects & objects_msg)
 {
     if(valid_path.type == ValidPath::NONE)
     {
         return valid_path; //WIP
     }
 
-    std::pair<bool, bool> current_side_object = checkBlindSpot(pose_msg, objects_msg);
+    checkBlindSpot(objects_msg);
+
     if(valid_path.type == ValidPath::LEFT)
     {
-        if(!current_side_object.first)
+        if(!lane_status_.left_occupied)
         {
             return valid_path;
         }
@@ -203,7 +206,7 @@ ValidPath ValidPathChecker::filterPathWithBlindspot(ValidPath & valid_path, cons
     }
     else if(valid_path.type == ValidPath::RIGHT)
     {
-        if(!current_side_object.second)
+        if(!lane_status_.right_occupied)
         {
             return valid_path;
         }
@@ -215,12 +218,12 @@ ValidPath ValidPathChecker::filterPathWithBlindspot(ValidPath & valid_path, cons
     }
     else if(valid_path.type == ValidPath::LEFTANDRIGHT)
     {
-        if(!current_side_object.first && ego_status_.is_ego_cruising)
+        if(!lane_status_.left_occupied && ego_status_.is_ego_cruising)
         {
             valid_path.type = ValidPath::LEFT;
             return valid_path;
         }
-        else if(!current_side_object.second && ego_status_.is_ego_cruising)
+        else if(!lane_status_.right_occupied && ego_status_.is_ego_cruising)
         {
             valid_path.type = ValidPath::RIGHT;
             return valid_path;
@@ -233,36 +236,6 @@ ValidPath ValidPathChecker::filterPathWithBlindspot(ValidPath & valid_path, cons
     }
 
     return valid_path; //something wrong
-}
-
-void ValidPathChecker::pubMarker(const std::vector<Point> & point_vec)
-{
-    visualization_msgs::msg::MarkerArray marker_vec;
-    int id = 0;
-
-    // for(Point point : object.lateral_safe_boundary)
-    for(int i = 0; i < point_vec.size(); i++)
-    {
-        visualization_msgs::msg::Marker marker;
-        marker.header.frame_id = "map";
-        marker.header.stamp = this->now();
-        marker.ns = "point";
-        marker.id = id++;
-        marker.type = visualization_msgs::msg::Marker::CUBE;
-        marker.action =  visualization_msgs::msg::Marker::ADD;
-        marker.pose.position.x = point_vec[i].x;
-        marker.pose.position.y = point_vec[i].y;
-        marker.pose.position.z = point_vec[i].z;
-        marker.scale.x = 0.5;
-        marker.scale.y = 0.5;
-        marker.scale.z = 0.5;
-        marker.color.a = 1.0;
-        marker.color.r = 1.0;
-        marker.color.g = 0.0;
-        marker.color.b = 0.0;
-        marker_vec.markers.push_back(marker);
-    }
-    marker_pub_->publish(marker_vec);
 }
 } //namespace perception_component
 #include <rclcpp_components/register_node_macro.hpp>

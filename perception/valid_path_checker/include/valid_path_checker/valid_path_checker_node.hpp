@@ -34,6 +34,13 @@ class ValidPathChecker : public rclcpp::Node{
             bool is_ego_cruising;
         };
 
+        struct LaneStatus
+        {
+            bool left_occupied;
+            bool right_occupied;
+            ValidPath furthest_lane;
+        };
+
         rclcpp::Subscription<Path>::SharedPtr sub_main_path_;
         rclcpp::Subscription<Path>::SharedPtr sub_right_path_;
         rclcpp::Subscription<Path>::SharedPtr sub_left_path_;
@@ -47,6 +54,7 @@ class ValidPathChecker : public rclcpp::Node{
         rclcpp::TimerBase::SharedPtr timer_;
 
         Status ego_status_;
+        LaneStatus lane_status_;
 
         Path::SharedPtr main_path_msg_ptr_;
         Path::SharedPtr right_path_msg_ptr_;
@@ -64,11 +72,9 @@ class ValidPathChecker : public rclcpp::Node{
         void run();
         bool checkSubscription();
         bool checkEgoCruiseState(const DistToObject & dist_to_object_msg);
-        std::pair<bool, bool> checkBlindSpot(const Odometry & pose_msg, const DetectedObjects & objects_msg);
+        void checkBlindSpot(const DetectedObjects & objects_msg);
         ValidPath getLeftRightPathExistence(ValidPath & valid_path, const Path & right_path, const Path & left_path);
-        ValidPath filterPathWithBlindspot(ValidPath & valid_path, const Odometry & pose_msg, 
-            const DetectedObjects & objects_msg);
-        void pubMarker(const std::vector<Point> & point_vec);
+        ValidPath filterPathWithBlindspot(ValidPath & valid_path, const DetectedObjects & objects_msg);
 };
 } //namespace perception_component
 #endif //VALID_PATH_CHECKER__VALID_PATH_CHECKER_NODE_HPP
