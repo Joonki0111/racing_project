@@ -13,6 +13,9 @@ find_package(tier4_rtc_msgs REQUIRED)
 find_package(example_interfaces REQUIRED)
 find_package(perception_msgs REQUIRED)
 find_package(planning_msgs REQUIRED)
+find_package(autoware_auto_planning_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 include_directories(include)
 
@@ -30,6 +33,9 @@ ament_target_dependencies(
   example_interfaces
   perception_msgs
   planning_msgs
+  autoware_auto_planning_msgs
+  geometry_msgs
+  visualization_msgs
 )
 
 rclcpp_components_register_nodes(
